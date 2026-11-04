@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: agenda-tec
+    runtime: docker
+    plan: free
+    region: ohio
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true

@@ -202,9 +202,9 @@
                         <img src="/qrcode.png" alt="QR Code para abrir o WhatsApp da Agenda Tec">
                     </a>
                     <div>
-                        <h3>Fale direto pelo WhatsApp</h3>
+                        <h3>Falar no WhatsApp</h3>
                         <p>Aponte a câmera do celular para o código ou abra a conversa.</p>
-                        <a href="https://wa.me/5583988354958" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
+                        <a href="https://wa.me/5583988354958" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
                     </div>
                 </aside>
             </section>
@@ -269,21 +269,54 @@
             statusMessage.textContent = "Enviando solicitação...";
             statusMessage.dataset.state = "";
 
+            const formData = new FormData(form);
+            const whatsappWindow = window.open("about:blank", "_blank");
+            if (whatsappWindow) {
+                whatsappWindow.opener = null;
+            }
+
             try {
                 const response = await fetch("/api/visitas", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-                    body: new URLSearchParams(new FormData(form))
+                    body: new URLSearchParams(formData)
                 });
                 const result = await response.json();
                 if (!response.ok) {
                     throw new Error(result.erro || "Não foi possível enviar a solicitação.");
                 }
+
+                const nome = String(formData.get("nome") || "").trim();
+                const telefone = String(formData.get("telefone") || "").trim();
+                const endereco = String(formData.get("endereco") || "").trim();
+                const data = String(formData.get("data") || "").trim();
+                const horario = String(formData.get("horario") || "").trim();
+                const servico = String(formData.get("servico") || "").trim();
+                const detalhes = String(formData.get("detalhes") || "").trim();
+
+                const whatsappMessage = [
+                    "Olá! Gostaria de confirmar uma solicitação de visita.",
+                    `Nome: ${nome}`,
+                    `Telefone: ${telefone}`,
+                    `Endereço: ${endereco}`,
+                    `Data desejada: ${data}`,
+                    `Horário desejado: ${horario}`,
+                    `Serviço: ${servico}`,
+                    detalhes ? `Detalhes: ${detalhes}` : "Detalhes: Não informado."
+                ].join("\n");
+
+                if (whatsappWindow) {
+                    whatsappWindow.location.href = `https://wa.me/5583988354958?text=${encodeURIComponent(whatsappMessage)}`;
+                }
+
                 statusMessage.textContent = result.mensagem;
                 statusMessage.dataset.state = "success";
                 form.reset();
                 dateInput.min = localToday;
             } catch (error) {
+                if (whatsappWindow && !whatsappWindow.closed) {
+                    whatsappWindow.close();
+                }
                 statusMessage.textContent = error.message || "Falha de conexão. Tente novamente.";
                 statusMessage.dataset.state = "error";
             } finally {
